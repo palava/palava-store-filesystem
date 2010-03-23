@@ -21,12 +21,11 @@
 package de.cosmocode.palava.store;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.HiddenFileFilter;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,6 +58,20 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
         FileUtils.deleteDirectory(directory);
     }
     
+    @Test
+    @Override
+    public void create() throws IOException {
+        final Store unit = unit();
+        final File file = new File("src/test/resources/willi.png");
+        final InputStream stream = FileUtils.openInputStream(file);
+        final String identifier = unit.create(stream);
+        stream.close();
+
+        final File target = new File(directory, identifier.replace("-", File.separator));
+        Assert.assertTrue(target.exists());
+        Assert.assertTrue(FileUtils.contentEquals(file, target));
+    }
+    
     /**
      * Tests whether {@link FileSystemStore#delete(String)} automatically deletes
      * empty parent directories.
@@ -69,14 +82,8 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
     public void deleteEmptyDirectories() throws IOException {
         final Store unit = unit();
         final File file = new File("src/test/resources/willi.png");
-        final InputStream stream = new FileInputStream(file);
-        final String identifier = unit.create(stream);
-        stream.close();
-        final File target = new File(directory, identifier.replace("-", File.separator));
-        Assert.assertTrue(target.exists());
-        unit.delete(identifier);
-        Assert.assertFalse(target.exists());
-        Assert.assertTrue(directory.list(HiddenFileFilter.VISIBLE).length == 0);
+        final String identifier = unit.create(FileUtils.openInputStream(file));
+        Assert.assertTrue(IOUtils.contentEquals(FileUtils.openInputStream(file), unit.read(identifier)));
     }
     
     /**
@@ -89,7 +96,7 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
     public void keepNonEmptyDirectories() throws IOException {
         final Store unit = unit();
         final File file = new File("src/test/resources/willi.png");
-        final InputStream stream = new FileInputStream(file);
+        final InputStream stream = FileUtils.openInputStream(file);
         final String identifier = unit.create(stream);
         stream.close();
         final File target = new File(directory, identifier.replace("-", File.separator));
