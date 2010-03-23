@@ -25,7 +25,7 @@ package de.cosmocode.palava.store;
  *
  * @author Willi Schoenborn
  */
-public final class FileSystemStoreConfig {
+final class FileSystemStoreConfig {
 
     public static final String PREFIX = StoreConfig.PREFIX + "filesystem.";
     
