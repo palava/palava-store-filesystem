@@ -21,6 +21,7 @@
 package de.cosmocode.palava.store;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -58,20 +59,6 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
         FileUtils.deleteDirectory(directory);
     }
     
-    @Test
-    @Override
-    public void create() throws IOException {
-        final Store unit = unit();
-        final File file = new File("src/test/resources/willi.png");
-        final InputStream stream = FileUtils.openInputStream(file);
-        final String identifier = unit.create(stream);
-        stream.close();
-
-        final File target = new File(directory, identifier.replace("-", File.separator));
-        Assert.assertTrue(target.exists());
-        Assert.assertTrue(FileUtils.contentEquals(file, target));
-    }
-    
     /**
      * Tests whether {@link FileSystemStore#delete(String)} automatically deletes
      * empty parent directories.
@@ -81,9 +68,12 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
     @Test
     public void deleteEmptyDirectories() throws IOException {
         final Store unit = unit();
-        final File file = new File("src/test/resources/willi.png");
-        final String identifier = unit.create(FileUtils.openInputStream(file));
-        Assert.assertTrue(IOUtils.contentEquals(FileUtils.openInputStream(file), unit.read(identifier)));
+        final InputStream stream = getClass().getClassLoader().getResourceAsStream("willi.png");
+        final String identifier = unit.create(stream);
+        Assert.assertTrue(IOUtils.contentEquals(
+            getClass().getClassLoader().getResourceAsStream("willi.png"), 
+            unit.read(identifier))
+        );
     }
     
     /**
@@ -95,15 +85,14 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
     @Test
     public void keepNonEmptyDirectories() throws IOException {
         final Store unit = unit();
-        final File file = new File("src/test/resources/willi.png");
-        final InputStream stream = FileUtils.openInputStream(file);
+        final InputStream stream = getClass().getClassLoader().getResourceAsStream("willi.png");
         final String identifier = unit.create(stream);
         stream.close();
         final File target = new File(directory, identifier.replace("-", File.separator));
         Assert.assertTrue(target.exists());
         final File top = new File(directory, identifier.split("-")[0]);
         Assert.assertTrue(top.exists());
-        FileUtils.copyFileToDirectory(file, top);
+        IOUtils.copy(stream, new FileOutputStream(new File(top, "willi.png")));
         unit.delete(identifier);
         Assert.assertFalse(target.exists());
         Assert.assertTrue(top.exists());

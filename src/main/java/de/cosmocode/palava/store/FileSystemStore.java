@@ -45,6 +45,8 @@ import com.google.inject.name.Named;
  *   by the dash signs.
  * </p>
  *
+ * TODO concurrency
+ * 
  * @author Willi Schoenborn
  */
 final class FileSystemStore implements Store {
@@ -65,6 +67,7 @@ final class FileSystemStore implements Store {
         final UUID uuid = UUID.randomUUID();
         
         final File file = getFile(uuid);
+        // TODO check if file is not present
         final OutputStream output = FileUtils.openOutputStream(file);
         LOG.trace("Storing {} to {}", stream, file);
         
