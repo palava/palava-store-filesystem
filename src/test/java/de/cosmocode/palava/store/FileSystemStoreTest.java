@@ -92,7 +92,10 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
         Assert.assertTrue(target.exists());
         final File top = new File(directory, identifier.split("-")[0]);
         Assert.assertTrue(top.exists());
-        IOUtils.copy(stream, new FileOutputStream(new File(top, "willi.png")));
+        IOUtils.copy(
+            getClass().getClassLoader().getResourceAsStream("willi.png"), 
+            new FileOutputStream(new File(top, "willi.png"))
+        );
         unit.delete(identifier);
         Assert.assertFalse(target.exists());
         Assert.assertTrue(top.exists());
