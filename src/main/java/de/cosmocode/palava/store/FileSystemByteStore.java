@@ -22,13 +22,14 @@ package de.cosmocode.palava.store;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.name.Named;
 
 /**
- * File system based implementation of the {@link Store} interface.
+ * File system based implementation of the {@link ByteStore} interface.
  * 
  * <p>
  *   This implementation uses {@link UUID} to generate unique identifiers.
@@ -47,30 +48,31 @@ import com.google.inject.name.Named;
  *
  * @author Willi Schoenborn
  */
-final class FileSystemStore implements Store {
+final class FileSystemByteStore implements ByteStore {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FileSystemStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemByteStore.class);
 
     private final File directory;
     
-    public FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
+    public FileSystemByteStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
         Preconditions.checkNotNull(directory, "Directory");
         FileUtils.forceMkdir(directory);
         this.directory = directory;
     }
-    
+
     @Override
-    public String create(InputStream stream) throws IOException {
-        Preconditions.checkNotNull(stream, "Stream");
+    public String create(ByteBuffer buffer) throws IOException {
+        Preconditions.checkNotNull(buffer, "Buffer");
         final UUID uuid = UUID.randomUUID();
         
         final File file = getFile(uuid);
         Preconditions.checkState(!file.exists(), "File %s already present", file);
-        final OutputStream output = FileUtils.openOutputStream(file);
-        LOG.trace("Storing {} to {}", stream, file);
+        final FileOutputStream output = FileUtils.openOutputStream(file);
+        final FileChannel channel = output.getChannel();
+        LOG.trace("Storing {} to {}", buffer, file);
         
         try {
-            IOUtils.copy(stream, output);
+            channel.write(buffer);
             output.flush();
         } finally {
             output.close();
@@ -80,11 +82,12 @@ final class FileSystemStore implements Store {
     }
 
     @Override
-    public InputStream read(String identifier) throws IOException {
+    public ByteBuffer read(String identifier) throws IOException {
         Preconditions.checkNotNull(identifier, "Identifier");
         final File file = getFile(identifier);
         LOG.trace("Reading file from {}", file);
-        return FileUtils.openInputStream(file);
+        final FileChannel channel = FileUtils.openInputStream(file).getChannel();
+        return channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
     }
     
     /**
