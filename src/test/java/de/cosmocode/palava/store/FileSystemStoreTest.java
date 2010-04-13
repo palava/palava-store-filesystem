@@ -41,12 +41,19 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
     private final File directory = new File(System.getProperty("java.io.tmpdir"), "store");
     
     @Override
-    public Store unit() {
+    public FileSystemStore unit() {
         try {
             return new FileSystemStore(directory);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+    
+    @Override
+    protected Store unitWithGenerator(IdGenerator generator) {
+        final FileSystemStore unit = unit();
+        unit.setGenerator(generator);
+        return unit;
     }
     
     /**
