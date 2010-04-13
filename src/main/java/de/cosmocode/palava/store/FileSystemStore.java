@@ -31,7 +31,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.util.Collection;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -45,6 +44,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 /**
@@ -64,6 +64,8 @@ final class FileSystemStore extends AbstractByteStore implements ByteStore {
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStore.class);
     
     private final File directory;
+    
+    private IdGenerator generator = new UUIDGenerator();
 
     private final Function<File, String> toIdentifier = new Function<File, String>() {
         
@@ -80,10 +82,15 @@ final class FileSystemStore extends AbstractByteStore implements ByteStore {
         this.directory = directory;
     }
     
+    @Inject(optional = true)
+    void setGenerator(IdGenerator generator) {
+        this.generator = generator;
+    }
+    
     @Override
     public String create(InputStream stream) throws IOException {
         Preconditions.checkNotNull(stream, "Stream");
-        final String uuid = UUID.randomUUID().toString();
+        final String uuid = generator.generate();
         create(stream, uuid);
         return uuid;
     }
