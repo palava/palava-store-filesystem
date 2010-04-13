@@ -84,7 +84,7 @@ final class FileSystemStore extends AbstractByteStore implements ByteStore {
     
     @Inject(optional = true)
     void setGenerator(IdGenerator generator) {
-        this.generator = generator;
+        this.generator = Preconditions.checkNotNull(generator, "Generator");
     }
     
     @Override
