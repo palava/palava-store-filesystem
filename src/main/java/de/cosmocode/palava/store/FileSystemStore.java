@@ -59,7 +59,7 @@ import com.google.inject.name.Named;
  *
  * @author Willi Schoenborn
  */
-final class FileSystemStore extends AbstractByteStore implements ByteStore {
+public final class FileSystemStore extends AbstractByteStore implements ByteStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStore.class);
     
@@ -76,7 +76,7 @@ final class FileSystemStore extends AbstractByteStore implements ByteStore {
         
     };
     
-    public FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
+    FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
         Preconditions.checkNotNull(directory, "Directory");
         FileUtils.forceMkdir(directory);
         this.directory = directory;
@@ -151,8 +151,32 @@ final class FileSystemStore extends AbstractByteStore implements ByteStore {
         deleteEmptyParent(file.getParentFile());
     }
     
-    private File getFile(String identifier) {
+    /**
+     * Provides a file pointing to the target as specified by
+     * the given identifier.
+     * 
+     * @param identifier the file identifier
+     * @return a file (may not exist)
+     */
+    public File getFile(String identifier) {
         return new File(directory, identifier.replace("-", File.separator));
+    }
+    
+    /**
+     * Reads a file from this store.
+     * 
+     * @param identifier the identifier of the binary data being retrieved
+     * @return the file associated with the given identifier
+     * @throws IOException if file does not exist
+     */
+    public File readFile(String identifier) throws IOException {
+        Preconditions.checkNotNull(identifier, "Identifier");
+        final File file = getFile(identifier);
+        if (file.exists()) {
+            return file;
+        } else {
+            throw new FileNotFoundException(file.getAbsolutePath());
+        }
     }
     
     private void deleteEmptyParent(File file) throws IOException {
