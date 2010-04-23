@@ -20,21 +20,49 @@
 
 package de.cosmocode.palava.store;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
+import java.io.File;
+import java.lang.annotation.Annotation;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.google.inject.Key;
+import com.google.inject.PrivateModule;
 import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 
 /**
  * Binds the {@link Store} and the {@link ByteStore} interface to {@link FileSystemStore}.
  *
  * @author Willi Schoenborn
  */
-public final class FileSystemStoreModule implements Module {
+public final class FileSystemStoreModule extends PrivateModule {
 
-    @Override
-    public void configure(Binder binder) {
-        binder.bind(ByteStore.class).to(FileSystemStore.class).in(Singleton.class);
-        binder.bind(Store.class).to(ByteStore.class).in(Singleton.class);
+    private final Key<ByteStore> byteStoreKey;
+    private final Key<Store> storeKey;
+    
+    private final String prefix;
+    
+    public FileSystemStoreModule() {
+        this.byteStoreKey = Key.get(ByteStore.class);
+        this.storeKey = Key.get(Store.class);
+        this.prefix = null;
     }
-
+    
+    public FileSystemStoreModule(Class<? extends Annotation> annotationType, String prefix) {
+        this.byteStoreKey = Key.get(ByteStore.class, annotationType);
+        this.storeKey = Key.get(Store.class, annotationType);
+        this.prefix = prefix;
+    }
+    
+    @Override
+    protected void configure() {
+        if (StringUtils.isNotBlank(prefix)) {
+            bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
+                Key.get(File.class, Names.named(prefix + FileSystemStoreConfig.DIRECTORY)));
+        }
+        
+        bind(byteStoreKey).to(FileSystemStore.class).in(Singleton.class);
+        bind(storeKey).to(byteStoreKey).in(Singleton.class);
+    }
+    
 }
