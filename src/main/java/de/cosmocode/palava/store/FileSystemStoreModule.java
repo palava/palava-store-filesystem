@@ -54,7 +54,7 @@ public final class FileSystemStoreModule extends PrivateModule {
     protected void configure() {
         if (StringUtils.isNotBlank(prefix)) {
             bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
-                Key.get(File.class, Names.named(prefix + FileSystemStoreConfig.DIRECTORY)));
+                Key.get(File.class, Names.named(prefix + "." + FileSystemStoreConfig.DIRECTORY)));
         }
         
         bind(byteStoreKey).to(FileSystemStore.class).in(Singleton.class);

@@ -72,6 +72,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         
     };
     
+    @Inject
     FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
         Preconditions.checkNotNull(directory, "Directory");
         FileUtils.forceMkdir(directory);
