@@ -35,18 +35,21 @@ public final class FileSystemStoreModule extends PrivateModule {
 
     private final Key<ByteStore> byteStoreKey;
     private final Key<Store> storeKey;
+    private final Key<FileSystemStore> fileSystemStoreKey;
     
     private final String prefix;
     
     public FileSystemStoreModule() {
         this.byteStoreKey = Key.get(ByteStore.class);
         this.storeKey = Key.get(Store.class);
+        this.fileSystemStoreKey = Key.get(FileSystemStore.class);
         this.prefix = null;
     }
     
     public FileSystemStoreModule(Class<? extends Annotation> annotationType, String prefix) {
         this.byteStoreKey = Key.get(ByteStore.class, annotationType);
         this.storeKey = Key.get(Store.class, annotationType);
+        this.fileSystemStoreKey = Key.get(FileSystemStore.class, annotationType);
         this.prefix = prefix;
     }
     
@@ -57,7 +60,8 @@ public final class FileSystemStoreModule extends PrivateModule {
                 Key.get(File.class, Names.named(prefix + "." + FileSystemStoreConfig.DIRECTORY)));
         }
         
-        bind(byteStoreKey).to(FileSystemStore.class).in(Singleton.class);
+        bind(fileSystemStoreKey).to(FileSystemStore.class).in(Singleton.class);
+        bind(byteStoreKey).to(fileSystemStoreKey).in(Singleton.class);
         bind(storeKey).to(byteStoreKey).in(Singleton.class);
         
         expose(byteStoreKey);

@@ -179,6 +179,8 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     private void deleteEmptyParent(File file) throws IOException {
         Preconditions.checkArgument(file.isDirectory(), "%s has to be a directory", file);
         
+        if (directory.equals(file)) return;
+        
         if (file.list().length > 0) {
             LOG.trace("Keeping non empty directory {}", file);
             return;
