@@ -59,6 +59,9 @@ public final class FileSystemStoreModule extends PrivateModule {
         
         bind(byteStoreKey).to(FileSystemStore.class).in(Singleton.class);
         bind(storeKey).to(byteStoreKey).in(Singleton.class);
+        
+        expose(byteStoreKey);
+        expose(storeKey);
     }
     
 }
