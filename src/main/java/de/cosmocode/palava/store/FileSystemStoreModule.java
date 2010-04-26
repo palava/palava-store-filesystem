@@ -28,6 +28,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
+import de.cosmocode.palava.core.inject.Config;
 import de.cosmocode.palava.core.inject.RebindModule;
 
 /**
@@ -79,13 +80,13 @@ public final class FileSystemStoreModule implements Module {
     private static final class AnnotatedInstanceModule extends PrivateModule implements RebindModule {
         
         private final Annotation key;
-        private final FileSystemStoreConfig config;
+        private final Config config;
         
         private boolean overridden;
         
         private AnnotatedInstanceModule(Annotation annotation, String prefix) {
             this.key = annotation;
-            this.config = FileSystemStoreConfig.create(prefix);
+            this.config = new Config(prefix);
         }
 
         @Override
@@ -142,13 +143,13 @@ public final class FileSystemStoreModule implements Module {
     private static final class AnnotatedModule extends PrivateModule implements RebindModule {
         
         private final Class<? extends Annotation> key;
-        private final FileSystemStoreConfig config;
+        private final Config config;
         
         private boolean overridden;
         
         private AnnotatedModule(Class<? extends Annotation> key, String prefix) {
             this.key = key;
-            this.config = FileSystemStoreConfig.create(prefix);
+            this.config = new Config(prefix);
         }
         
         @Override

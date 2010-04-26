@@ -29,30 +29,8 @@ final class FileSystemStoreConfig {
     
     public static final String FILE_IDENTIFIER = PREFIX + "fileIdentifier";
     
-    private final String prefix;
-    
-    private FileSystemStoreConfig(String name) {
-        this.prefix = name + "." + PREFIX;
-    }
-    
-    /**
-     * Produces a prefixed version of the given key.
-     * 
-     * @param key the key being prefixed
-     * @return key preceded with prefix
-     */
-    public String prefixed(String key) {
-        return prefix + key;
-    }
-    
-    /**
-     * Creates a new {@link FileSystemStoreConfig} using the defined name.
-     * 
-     * @param name the name being used a prefix
-     * @return a new instance
-     */
-    public static FileSystemStoreConfig create(String name) {
-        return new FileSystemStoreConfig(name);
+    private FileSystemStoreConfig() {
+        
     }
     
 }
