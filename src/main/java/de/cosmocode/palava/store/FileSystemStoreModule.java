@@ -19,53 +19,168 @@ package de.cosmocode.palava.store;
 import java.io.File;
 import java.lang.annotation.Annotation;
 
-import org.apache.commons.lang.StringUtils;
-
+import com.google.common.base.Preconditions;
+import com.google.inject.Binder;
 import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+
+import de.cosmocode.palava.core.inject.RebindModule;
 
 /**
  * Binds the {@link Store} and the {@link ByteStore} interface to {@link FileSystemStore}.
  *
  * @author Willi Schoenborn
  */
-public final class FileSystemStoreModule extends PrivateModule {
+public final class FileSystemStoreModule implements Module {
 
-    private final Key<ByteStore> byteStoreKey;
-    private final Key<Store> storeKey;
-    private final Key<FileSystemStore> fileSystemStoreKey;
-    
-    private final String prefix;
-    
-    public FileSystemStoreModule() {
-        this.byteStoreKey = Key.get(ByteStore.class);
-        this.storeKey = Key.get(Store.class);
-        this.fileSystemStoreKey = Key.get(FileSystemStore.class);
-        this.prefix = null;
-    }
-    
-    public FileSystemStoreModule(Class<? extends Annotation> annotationType, String prefix) {
-        this.byteStoreKey = Key.get(ByteStore.class, annotationType);
-        this.storeKey = Key.get(Store.class, annotationType);
-        this.fileSystemStoreKey = Key.get(FileSystemStore.class, annotationType);
-        this.prefix = prefix;
-    }
-    
     @Override
-    protected void configure() {
-        if (StringUtils.isNotBlank(prefix)) {
+    public void configure(Binder binder) {
+        binder.bind(FileSystemStore.class).in(Singleton.class);
+        binder.bind(ByteStore.class).to(FileSystemStore.class).in(Singleton.class);
+        binder.bind(Store.class).to(ByteStore.class).in(Singleton.class);
+    }
+    
+    /**
+     * Equivalent to {@link #annotatedWith(Annotation, String)} using
+     * {@code Named.names(name), name}.
+     * 
+     * @param name the name being used
+     * @return a module which rebinds configuration and exposed keys using the
+     *         specified key
+     */
+    public static RebindModule named(String name) {
+        Preconditions.checkNotNull(name, "Name");
+        return annotatedWith(Names.named(name), name);
+    }
+    
+    /**
+     * Rebinds all configuration entries using the specified prefix for configuration
+     * keys and the supplied annoation for key rebindings.
+     * 
+     * @param annotation the new binding annotation
+     * @param prefix the prefix
+     * @return a module which rebinds all required settings
+     */
+    public static RebindModule annotatedWith(Annotation annotation, String prefix) {
+        Preconditions.checkNotNull(annotation, "Annotation");
+        Preconditions.checkNotNull(prefix, "Prefix");
+        return new AnnotatedInstanceModule(annotation, prefix);
+    }
+    
+    /**
+     * A {@link RebindModule} which uses a name to rebind using {@link Named}.
+     *
+     * @author Willi Schoenborn
+     */
+    private static final class AnnotatedInstanceModule extends PrivateModule implements RebindModule {
+        
+        private final Annotation key;
+        private final FileSystemStoreConfig config;
+        
+        private boolean overridden;
+        
+        private AnnotatedInstanceModule(Annotation annotation, String prefix) {
+            this.key = annotation;
+            this.config = FileSystemStoreConfig.create(prefix);
+        }
+
+        @Override
+        protected void configure() {
             bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
-                Key.get(File.class, Names.named(prefix + "." + FileSystemStoreConfig.DIRECTORY)));
+                Key.get(File.class, Names.named(config.prefixed(FileSystemStoreConfig.DIRECTORY))));
+            
+            if (overridden) {
+                bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
+                    Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
+                ).in(Singleton.class);
+                
+                bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
+                    Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
+                ).in(Singleton.class);
+            }
+            
+            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
+            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
+            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
+            
+            expose(FileSystemStore.class).annotatedWith(key);
+            expose(ByteStore.class).annotatedWith(key);
+            expose(Store.class).annotatedWith(key);
         }
         
-        bind(fileSystemStoreKey).to(FileSystemStore.class).in(Singleton.class);
-        bind(byteStoreKey).to(fileSystemStoreKey).in(Singleton.class);
-        bind(storeKey).to(byteStoreKey).in(Singleton.class);
+        @Override
+        public Module overrideOptionals() {
+            overridden = true;
+            return this;
+        }
         
-        expose(byteStoreKey);
-        expose(storeKey);
+    }
+
+    /**
+     * Rebinds all configuration entries using the specified name as prefix for configuration
+     * keys and the supplied annoation for key rebindings.
+     * 
+     * @param annotationType the new binding annotation
+     * @param prefix the prefix
+     * @return a module which rebinds all required settings
+     */
+    public static RebindModule annotatedWith(Class<? extends Annotation> annotationType, String prefix) {
+        Preconditions.checkNotNull(annotationType, "AnnotationType");
+        Preconditions.checkNotNull(prefix, "Prefix");
+        return new AnnotatedModule(annotationType, prefix);
+    }
+    
+    /**
+     * A {@link RebindModule} which uses {@link Key#get(java.lang.reflect.Type, Annotation)} to rebind.
+     *
+     * @author Willi Schoenborn
+     */
+    private static final class AnnotatedModule extends PrivateModule implements RebindModule {
+        
+        private final Class<? extends Annotation> key;
+        private final FileSystemStoreConfig config;
+        
+        private boolean overridden;
+        
+        private AnnotatedModule(Class<? extends Annotation> key, String prefix) {
+            this.key = key;
+            this.config = FileSystemStoreConfig.create(prefix);
+        }
+        
+        @Override
+        protected void configure() {
+            bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
+                Key.get(File.class, Names.named(config.prefixed(FileSystemStoreConfig.DIRECTORY))));
+            
+            if (overridden) {
+                bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
+                    Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
+                ).in(Singleton.class);
+                
+                bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
+                    Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
+                ).in(Singleton.class);
+            }
+            
+            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
+            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
+            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
+            
+            expose(FileSystemStore.class).annotatedWith(key);
+            expose(ByteStore.class).annotatedWith(key);
+            expose(Store.class).annotatedWith(key);
+        }
+        
+        @Override
+        public Module overrideOptionals() {
+            overridden = true;
+            return this;
+        }
+        
     }
     
 }

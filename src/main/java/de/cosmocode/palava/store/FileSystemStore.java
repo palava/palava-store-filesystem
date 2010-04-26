@@ -62,12 +62,14 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     private final File directory;
     
     private IdGenerator generator = new UUIDGenerator();
+    
+    private FileIdentifier fileIdentifier = new DefaultFileIdentifier();
 
     private final Function<File, String> toIdentifier = new Function<File, String>() {
         
         @Override
         public String apply(File from) {
-            return from.getPath().replace(directory.getPath(), "").substring(1).replace(File.separator, "-");
+            return fileIdentifier.toIdentifier(directory, from);
         }
         
     };
@@ -80,8 +82,13 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     }
     
     @Inject(optional = true)
-    void setGenerator(IdGenerator generator) {
+    void setGenerator(@Named(StoreConfig.ID_GENERATOR) IdGenerator generator) {
         this.generator = Preconditions.checkNotNull(generator, "Generator");
+    }
+    
+    @Inject(optional = true)
+    void setFileIdentifier(@Named(FileSystemStoreConfig.FILE_IDENTIFIER) FileIdentifier identifier) {
+        this.fileIdentifier = identifier;
     }
     
     @Override
@@ -112,6 +119,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     public ByteBuffer view(String identifier) throws IOException {
         Preconditions.checkNotNull(identifier, "Identifier");
         final File file = getFile(identifier);
+        Preconditions.checkState(file.exists(), "%s does not exist", file);
         LOG.trace("Reading file from {}", file);
         final FileChannel channel = new RandomAccessFile(file, "r").getChannel();
         return channel.map(MapMode.READ_ONLY, 0, channel.size());
@@ -137,14 +145,9 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     public void delete(String identifier) throws IOException {
         Preconditions.checkNotNull(identifier, "Identifier");
         final File file = getFile(identifier);
-        
-        if (!file.exists()) {
-            throw new FileNotFoundException(String.format("%s does not exist", file));
-        }
-        
+        Preconditions.checkState(file.exists(), "%s does not exist", file);
         LOG.trace("Removing {} from store", file);
         FileUtils.forceDelete(file);
-        
         deleteEmptyParent(file.getParentFile());
     }
     
@@ -156,7 +159,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
      * @return a file (may not exist)
      */
     public File getFile(String identifier) {
-        return new File(directory, identifier.replace("-", File.separator));
+        return fileIdentifier.toFile(directory, identifier);
     }
     
     /**
