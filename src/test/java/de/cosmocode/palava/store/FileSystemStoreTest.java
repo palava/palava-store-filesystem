@@ -25,6 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -57,6 +58,7 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
      * 
      * @throws IOException should not happen
      */
+    @Before
     @After
     public void cleanup() throws IOException {
         FileUtils.deleteDirectory(directory);
@@ -77,6 +79,9 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
             getClass().getClassLoader().getResourceAsStream("willi.png"), 
             unit.read(identifier))
         );
+        unit.delete(identifier);
+        Assert.assertTrue(directory.list().length == 0);
+        Assert.assertTrue(directory.exists());
     }
     
     /**

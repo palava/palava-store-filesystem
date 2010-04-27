@@ -182,6 +182,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     private void deleteEmptyParent(File file) throws IOException {
         Preconditions.checkArgument(file.isDirectory(), "%s has to be a directory", file);
         
+        // do not delete configured directory
         if (directory.equals(file)) return;
         
         if (file.list().length > 0) {
@@ -189,8 +190,6 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             return;
         }
         
-        if (file.equals(directory)) return;
-    
         LOG.trace("Deleting empty directory {}", file);
         FileUtils.deleteDirectory(file);
         deleteEmptyParent(file.getParentFile());
