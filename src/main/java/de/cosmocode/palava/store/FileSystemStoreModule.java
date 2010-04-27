@@ -23,11 +23,11 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Binder;
 import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.PrivateModule;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
+import de.cosmocode.palava.core.inject.AbstractRebindingModule;
 import de.cosmocode.palava.core.inject.Config;
 import de.cosmocode.palava.core.inject.RebindModule;
 
@@ -77,12 +77,10 @@ public final class FileSystemStoreModule implements Module {
      *
      * @author Willi Schoenborn
      */
-    private static final class AnnotatedInstanceModule extends PrivateModule implements RebindModule {
+    private static final class AnnotatedInstanceModule extends AbstractRebindingModule {
         
         private final Annotation key;
         private final Config config;
-        
-        private boolean overridden;
         
         private AnnotatedInstanceModule(Annotation annotation, String prefix) {
             this.key = annotation;
@@ -90,33 +88,34 @@ public final class FileSystemStoreModule implements Module {
         }
 
         @Override
-        protected void configure() {
+        protected void configuration() {
             bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
                 Key.get(File.class, Names.named(config.prefixed(FileSystemStoreConfig.DIRECTORY))));
-            
-            if (overridden) {
-                bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
-                    Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
-                ).in(Singleton.class);
-                
-                bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
-                    Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
-                ).in(Singleton.class);
-            }
-            
-            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
-            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
-            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
-            
-            expose(FileSystemStore.class).annotatedWith(key);
-            expose(ByteStore.class).annotatedWith(key);
-            expose(Store.class).annotatedWith(key);
         }
         
         @Override
-        public Module overrideOptionals() {
-            overridden = true;
-            return this;
+        protected void optionals() {
+            bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
+                Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
+            ).in(Singleton.class);
+            
+            bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
+                Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
+            ).in(Singleton.class);
+        }
+    
+        @Override
+        protected void bindings() {
+            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
+            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
+            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
+        }
+
+        @Override
+        protected void expose() {
+            expose(FileSystemStore.class).annotatedWith(key);
+            expose(ByteStore.class).annotatedWith(key);
+            expose(Store.class).annotatedWith(key);
         }
         
     }
@@ -140,46 +139,45 @@ public final class FileSystemStoreModule implements Module {
      *
      * @author Willi Schoenborn
      */
-    private static final class AnnotatedModule extends PrivateModule implements RebindModule {
+    private static final class AnnotatedModule extends AbstractRebindingModule {
         
         private final Class<? extends Annotation> key;
         private final Config config;
-        
-        private boolean overridden;
         
         private AnnotatedModule(Class<? extends Annotation> key, String prefix) {
             this.key = key;
             this.config = new Config(prefix);
         }
-        
+
         @Override
-        protected void configure() {
+        protected void configuration() {
             bind(File.class).annotatedWith(Names.named(FileSystemStoreConfig.DIRECTORY)).to(
                 Key.get(File.class, Names.named(config.prefixed(FileSystemStoreConfig.DIRECTORY))));
-            
-            if (overridden) {
-                bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
-                    Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
-                ).in(Singleton.class);
-                
-                bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
-                    Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
-                ).in(Singleton.class);
-            }
-            
-            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
-            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
-            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
-            
-            expose(FileSystemStore.class).annotatedWith(key);
-            expose(ByteStore.class).annotatedWith(key);
-            expose(Store.class).annotatedWith(key);
         }
         
         @Override
-        public Module overrideOptionals() {
-            overridden = true;
-            return this;
+        protected void optionals() {
+            bind(IdGenerator.class).annotatedWith(Names.named(StoreConfig.ID_GENERATOR)).to(
+                Key.get(IdGenerator.class, Names.named(config.prefixed(StoreConfig.ID_GENERATOR)))
+            ).in(Singleton.class);
+            
+            bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
+                Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
+            ).in(Singleton.class);
+        }
+    
+        @Override
+        protected void bindings() {
+            bind(FileSystemStore.class).annotatedWith(key).to(FileSystemStore.class).in(Singleton.class);
+            bind(ByteStore.class).annotatedWith(key).to(Key.get(FileSystemStore.class, key)).in(Singleton.class);
+            bind(Store.class).annotatedWith(key).to(Key.get(ByteStore.class, key)).in(Singleton.class);
+        }
+
+        @Override
+        protected void expose() {
+            expose(FileSystemStore.class).annotatedWith(key);
+            expose(ByteStore.class).annotatedWith(key);
+            expose(Store.class).annotatedWith(key);
         }
         
     }
