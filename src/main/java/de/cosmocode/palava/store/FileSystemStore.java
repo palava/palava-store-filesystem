@@ -158,7 +158,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
      * @param identifier the file identifier
      * @return a file (may not exist)
      */
-    public File getFile(String identifier) {
+    private File getFile(String identifier) {
         return fileIdentifier.toFile(directory, identifier);
     }
     
