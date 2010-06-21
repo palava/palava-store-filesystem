@@ -8,9 +8,9 @@
   <groupId>de.cosmocode.palava</groupId>
   <artifactId>palava-store-filesystem</artifactId>
   <name>Palava Store FileSystem</name>
-  <version>1.1.1</version>
+  <version>1.2-SNAPSHOT</version>
   <scm>
-    <developerConnection>scm:svn:https://palava.svn.cosmocode.de/palava-store-filesystem/tags/1.1.1</developerConnection>
+    <developerConnection>scm:svn:https://palava.svn.cosmocode.de/palava-store-filesystem/trunk</developerConnection>
   </scm>
   <repositories>
     <repository>
