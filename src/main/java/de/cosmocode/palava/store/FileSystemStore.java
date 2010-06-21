@@ -92,6 +92,10 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         this.fileIdentifier = identifier;
     }
     
+    public FileIdentifier getFileIdentifier() {
+        return fileIdentifier;
+    }
+    
     @Override
     public String create(InputStream stream) throws IOException {
         Preconditions.checkNotNull(stream, "Stream");

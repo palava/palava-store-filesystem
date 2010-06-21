@@ -17,7 +17,6 @@
 package de.cosmocode.palava.store;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -92,21 +91,17 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
      */
     @Test
     public void keepNonEmptyDirectories() throws IOException {
-        final Store unit = unit();
+        final FileSystemStore unit = unit();
         final InputStream stream = getClass().getClassLoader().getResourceAsStream("willi.png");
         final String identifier = unit.create(stream);
         stream.close();
-        final File target = new File(directory, identifier.replace("-", File.separator));
+        final File target = unit.getFileIdentifier().toFile(directory, identifier);
         Assert.assertTrue(target.exists());
-        final File top = new File(directory, identifier.split("-")[0]);
-        Assert.assertTrue(top.exists());
-        IOUtils.copy(
-            getClass().getClassLoader().getResourceAsStream("willi.png"), 
-            new FileOutputStream(new File(top, "willi.png"))
-        );
+        Assert.assertTrue(directory.list().length > 0);
+        unit.create(getClass().getClassLoader().getResourceAsStream("willi.png"), identifier + "test");
         unit.delete(identifier);
         Assert.assertFalse(target.exists());
-        Assert.assertTrue(top.exists());
+        Assert.assertTrue(directory.list().length > 0);
     }
     
 }

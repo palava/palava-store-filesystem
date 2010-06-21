@@ -27,12 +27,18 @@ final class DefaultFileIdentifier implements FileIdentifier {
 
     @Override
     public File toFile(File directory, String identifier) {
-        return new File(directory, identifier.replace("-", File.separator));
+        final StringBuilder builder = new StringBuilder(identifier);
+        
+        for (int i = 3; i < builder.length(); i += 4) {
+            builder.insert(i, File.separator);
+        }
+
+        return new File(directory, builder.toString());
     }
     
     @Override
     public String toIdentifier(File directory, File file) {
-        return file.getPath().replace(directory.getPath(), "").substring(1).replace(File.separator, "-");
+        return file.getPath().replace(directory.getPath(), "").substring(1).replace(File.separator, "");
     }
     
 }
