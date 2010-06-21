@@ -62,7 +62,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     
     private final File directory;
     
-    private IdGenerator generator = new UUIDGenerator();
+    private IdGenerator generator = new UUIDBaseGenerator();
     
     private FileIdentifier fileIdentifier = new DefaultFileIdentifier();
 
