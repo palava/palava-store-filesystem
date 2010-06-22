@@ -102,6 +102,12 @@ public final class FileSystemStoreModule implements Module {
             bind(FileIdentifier.class).annotatedWith(Names.named(FileSystemStoreConfig.FILE_IDENTIFIER)).to(
                 Key.get(FileIdentifier.class, Names.named(config.prefixed(FileSystemStoreConfig.FILE_IDENTIFIER)))
             ).in(Singleton.class);
+            
+            bind(String.class).annotatedWith(Names.named(FileSystemStoreConfig.UNIX_OWNER)).to(
+                Key.get(String.class, Names.named(config.prefixed(FileSystemStoreConfig.UNIX_OWNER))));
+            
+            bind(String.class).annotatedWith(Names.named(FileSystemStoreConfig.UNIX_PERMISSIONS)).to(
+                Key.get(String.class, Names.named(config.prefixed(FileSystemStoreConfig.UNIX_PERMISSIONS))));
         }
     
         @Override

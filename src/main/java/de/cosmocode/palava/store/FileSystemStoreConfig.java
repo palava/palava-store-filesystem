@@ -29,6 +29,10 @@ final class FileSystemStoreConfig {
     
     public static final String FILE_IDENTIFIER = PREFIX + "fileIdentifier";
     
+    public static final String UNIX_OWNER = PREFIX + "unixOwner";
+    
+    public static final String UNIX_PERMISSIONS = PREFIX + "unixPermissions";
+    
     private FileSystemStoreConfig() {
         
     }

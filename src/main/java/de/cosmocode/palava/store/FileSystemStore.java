@@ -39,6 +39,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 import com.google.inject.Inject;
@@ -75,6 +76,10 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         
     };
     
+    private String unixOwner;
+    
+    private String unixPermissions;
+    
     @Inject
     FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
         Preconditions.checkNotNull(directory, "Directory");
@@ -90,6 +95,16 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     @Inject(optional = true)
     void setFileIdentifier(@Named(FileSystemStoreConfig.FILE_IDENTIFIER) FileIdentifier identifier) {
         this.fileIdentifier = identifier;
+    }
+    
+    @Inject(optional = true)
+    void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) String unixOwner) {
+        this.unixOwner = unixOwner;
+    }
+    
+    @Inject(optional = true)
+    void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) String unixPermissions) {
+        this.unixPermissions = unixPermissions;
     }
     
     public FileIdentifier getFileIdentifier() {
@@ -111,9 +126,53 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         Preconditions.checkState(!file.exists(), "File %s is already present", file);
         LOG.trace("Storing {} to {}", stream, file);
         
-        final InputSupplier<InputStream> supplier = asSupplier(stream);
         Files.createParentDirs(file);
-        Files.copy(supplier, file);
+        Files.copy(asSupplier(stream), file);
+        
+        final Process chown = setOwner(file);
+        final Process chmod = setPermissions(file);
+
+        try {
+            chown.waitFor();
+            chmod.waitFor();
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        } finally {
+            close(chown);
+            close(chmod);
+        }
+    }
+    
+    private void close(Process process) {
+        Closeables.closeQuietly(process.getInputStream());
+        Closeables.closeQuietly(process.getOutputStream());
+        Closeables.closeQuietly(process.getErrorStream());
+    }
+    
+    private Process setOwner(File file) throws IOException {
+        if (unixOwner == null) {
+            LOG.trace("No unix owner configured, using defaults");
+            return DummyProcess.getInstance();
+        } else {
+            final String path = file.getAbsolutePath();
+            LOG.trace("Setting unix owner to {} for file {}", unixOwner, path);
+            return exec("chown %s %s", unixOwner, path);
+        }
+    }
+    
+    private Process setPermissions(File file) throws IOException {
+        if (unixPermissions == null) {
+            LOG.trace("No unix permissions configured, using defaults");
+            return DummyProcess.getInstance();
+        } else {
+            final String path = file.getAbsolutePath();
+            LOG.trace("Setting unix permissions to {} for file {}", unixPermissions, path);
+            return exec("chmod %s %s", unixPermissions, path);
+        }
+    }
+    
+    private Process exec(String command, Object... arguments) throws IOException {
+        return Runtime.getRuntime().exec(String.format(command, arguments));
     }
     
     private InputSupplier<InputStream> asSupplier(final InputStream stream) {
