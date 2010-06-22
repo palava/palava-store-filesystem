@@ -102,12 +102,12 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     }
     
     @Inject(optional = true)
-    void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) @Nullable String unixOwner) {
+    public void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) @Nullable String unixOwner) {
         this.unixOwner = unixOwner;
     }
     
     @Inject(optional = true)
-    void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) @Nullable String unixPermissions) {
+    public void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) @Nullable String unixPermissions) {
         this.unixPermissions = unixPermissions;
     }
     
