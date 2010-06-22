@@ -37,10 +37,12 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
@@ -135,13 +137,23 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         final Process chmod = setPermissions(file);
 
         try {
-            chown.waitFor();
-            chmod.waitFor();
+            waitAndCheck(chown);
+            waitAndCheck(chmod);
         } catch (InterruptedException e) {
             throw new IOException(e);
         } finally {
             close(chown);
             close(chmod);
+        }
+    }
+    
+    private void waitAndCheck(Process process) throws InterruptedException, IOException {
+        if (process.waitFor() == 0) {
+            return;
+        } else {
+            final byte[] bytes = ByteStreams.toByteArray(process.getErrorStream());
+            final String message = new String(bytes, Charsets.UTF_8);
+            throw new IOException(message);
         }
     }
     
@@ -173,8 +185,10 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         }
     }
     
-    private Process exec(String command, Object... arguments) throws IOException {
-        return Runtime.getRuntime().exec(String.format(command, arguments));
+    private Process exec(String template, Object... arguments) throws IOException {
+        final String command = String.format(template, arguments);
+        LOG.trace("Executing '{}'", command);
+        return Runtime.getRuntime().exec(command);
     }
     
     private InputSupplier<InputStream> asSupplier(final InputStream stream) {
