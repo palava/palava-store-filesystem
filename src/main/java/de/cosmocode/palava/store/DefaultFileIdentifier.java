@@ -23,7 +23,7 @@ import java.io.File;
  *
  * @author Willi Schoenborn
  */
-final class DefaultFileIdentifier implements FileIdentifier {
+public final class DefaultFileIdentifier implements FileIdentifier {
 
     @Override
     public File toFile(File directory, String identifier) {
