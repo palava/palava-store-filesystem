@@ -98,7 +98,8 @@ public final class FileSystemStoreTest extends AbstractStoreTest {
         final File target = unit.getFileIdentifier().toFile(directory, identifier);
         Assert.assertTrue(target.exists());
         Assert.assertTrue(directory.list().length > 0);
-        unit.create(getClass().getClassLoader().getResourceAsStream("willi.png"), identifier + "test");
+        final String otherIdentifier = identifier.substring(0, identifier.length() - 6) + "abcdef";
+        unit.create(getClass().getClassLoader().getResourceAsStream("willi.png"), otherIdentifier);
         unit.delete(identifier);
         Assert.assertFalse(target.exists());
         Assert.assertTrue(directory.list().length > 0);

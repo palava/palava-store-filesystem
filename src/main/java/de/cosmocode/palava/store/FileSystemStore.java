@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -30,7 +29,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -41,6 +39,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+import com.google.common.io.InputSupplier;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -62,7 +62,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     
     private final File directory;
     
-    private IdGenerator generator = new UUIDBaseGenerator();
+    private IdGenerator generator = new UUIDGenerator();
     
     private FileIdentifier fileIdentifier = new DefaultFileIdentifier();
 
@@ -105,19 +105,26 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     }
     
     @Override
-    public void create(InputStream stream, String identifier) throws IOException {
+    public void create(final InputStream stream, String identifier) throws IOException {
         Preconditions.checkNotNull(stream, "Stream");
         final File file = getFile(identifier);
         Preconditions.checkState(!file.exists(), "File %s is already present", file);
-        final OutputStream output = FileUtils.openOutputStream(file);
         LOG.trace("Storing {} to {}", stream, file);
         
-        try {
-            IOUtils.copy(stream, output);
-            output.flush();
-        } finally {
-            output.close();
-        }
+        final InputSupplier<InputStream> supplier = asSupplier(stream);
+        Files.createParentDirs(file);
+        Files.copy(supplier, file);
+    }
+    
+    private InputSupplier<InputStream> asSupplier(final InputStream stream) {
+        return new InputSupplier<InputStream>() {
+            
+            @Override
+            public InputStream getInput() throws IOException {
+                return stream;
+            }
+            
+        };
     }
     
     @Override
