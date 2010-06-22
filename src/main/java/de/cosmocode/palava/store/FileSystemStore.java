@@ -28,6 +28,8 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -98,12 +100,12 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
     }
     
     @Inject(optional = true)
-    void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) String unixOwner) {
+    void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) @Nullable String unixOwner) {
         this.unixOwner = unixOwner;
     }
     
     @Inject(optional = true)
-    void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) String unixPermissions) {
+    void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) @Nullable String unixPermissions) {
         this.unixPermissions = unixPermissions;
     }
     
