@@ -51,7 +51,7 @@ import com.google.inject.name.Named;
 
 /**
  * File system based implementation of the {@link Store} interface.
- * 
+ *
  * <p>
  *   This implementation uses {@link UUID} to generate unique identifiers.
  *   {@link InputStream}s will be saved as files in sub-directories.
@@ -64,59 +64,59 @@ import com.google.inject.name.Named;
 public final class FileSystemStore extends AbstractByteStore implements ByteStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStore.class);
-    
+
     private final File directory;
-    
+
     private IdGenerator generator = new UUIDGenerator();
-    
+
     private FileIdentifier fileIdentifier = new DefaultFileIdentifier();
 
     private final Function<File, String> toIdentifier = new Function<File, String>() {
-        
+
         @Override
         public String apply(File from) {
             return fileIdentifier.toIdentifier(directory, from);
         }
-        
+
     };
-    
+
     private String unixOwner;
-    
+
     private String unixPermissions;
-    
+
     @Inject
     FileSystemStore(@Named(FileSystemStoreConfig.DIRECTORY) File directory) throws IOException {
         Preconditions.checkNotNull(directory, "Directory");
         FileUtils.forceMkdir(directory);
         this.directory = directory;
     }
-    
+
     @Inject(optional = true)
     void setGenerator(@Named(StoreConfig.ID_GENERATOR) IdGenerator generator) {
         this.generator = Preconditions.checkNotNull(generator, "Generator");
     }
-    
+
     @Inject(optional = true)
     void setFileIdentifier(@Named(FileSystemStoreConfig.FILE_IDENTIFIER) FileIdentifier identifier) {
         this.fileIdentifier = identifier;
     }
-    
+
     @Inject(optional = true)
     public void setUnixOwner(@Named(FileSystemStoreConfig.UNIX_OWNER) @Nullable String unixOwner) {
         // TODO check for valid input
         this.unixOwner = unixOwner;
     }
-    
+
     @Inject(optional = true)
     public void setUnixPermissions(@Named(FileSystemStoreConfig.UNIX_PERMISSIONS) @Nullable String unixPermissions) {
         // TODO check for valid input
         this.unixPermissions = unixPermissions;
     }
-    
+
     public FileIdentifier getFileIdentifier() {
         return fileIdentifier;
     }
-    
+
     @Override
     public String create(InputStream stream) throws IOException {
         Preconditions.checkNotNull(stream, "Stream");
@@ -124,17 +124,17 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         create(stream, uuid);
         return uuid;
     }
-    
+
     @Override
     public void create(final InputStream stream, String identifier) throws IOException {
         Preconditions.checkNotNull(stream, "Stream");
         final File file = getFile(identifier);
         Preconditions.checkState(!file.exists(), "File %s is already present", file);
         LOG.trace("Storing {} to {}", stream, file);
-        
+
         Files.createParentDirs(file);
         Files.copy(asSupplier(stream), file);
-        
+
         final Process chown = setOwner(file);
         final Process chmod = setPermissions(file);
 
@@ -148,7 +148,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             close(chmod);
         }
     }
-    
+
     private void waitAndCheck(Process process) throws InterruptedException, IOException {
         if (process.waitFor() == 0) {
             return;
@@ -158,13 +158,13 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             throw new IOException(message);
         }
     }
-    
+
     private void close(Process process) {
         Closeables.closeQuietly(process.getInputStream());
         Closeables.closeQuietly(process.getOutputStream());
         Closeables.closeQuietly(process.getErrorStream());
     }
-    
+
     private Process setOwner(File file) throws IOException {
         if (unixOwner == null) {
             LOG.trace("No unix owner configured, using defaults");
@@ -175,7 +175,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             return exec("chown %s %s", unixOwner, path);
         }
     }
-    
+
     private Process setPermissions(File file) throws IOException {
         if (unixPermissions == null) {
             LOG.trace("No unix permissions configured, using defaults");
@@ -186,24 +186,24 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             return exec("chmod %s %s", unixPermissions, path);
         }
     }
-    
+
     private Process exec(String template, Object... arguments) throws IOException {
         final String command = String.format(template, arguments);
         LOG.trace("Executing '{}'", command);
         return Runtime.getRuntime().exec(command);
     }
-    
+
     private InputSupplier<InputStream> asSupplier(final InputStream stream) {
         return new InputSupplier<InputStream>() {
-            
+
             @Override
             public InputStream getInput() throws IOException {
                 return stream;
             }
-            
+
         };
     }
-    
+
     @Override
     public ByteBuffer view(String identifier) throws IOException {
         Preconditions.checkNotNull(identifier, "Identifier");
@@ -213,7 +213,7 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         final FileChannel channel = new RandomAccessFile(file, "r").getChannel();
         return channel.map(MapMode.READ_ONLY, 0, channel.size());
     }
-    
+
     @Override
     public Set<String> list() throws IOException {
         final IOFileFilter fileFilter = FileFilterUtils.fileFileFilter();
@@ -222,10 +222,10 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         final Collection<File> files = FileUtils.listFiles(directory, fileFilter, directoryFilter);
         return Sets.newHashSet(Collections2.transform(files, toIdentifier));
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * <p>
      *   Recursively deletes empty parent directories.
      * </p>
@@ -239,21 +239,21 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
         FileUtils.forceDelete(file);
         deleteEmptyParent(file.getParentFile());
     }
-    
+
     /**
      * Provides a file pointing to the target as specified by
      * the given identifier.
-     * 
+     *
      * @param identifier the file identifier
      * @return a file (may not exist)
      */
     private File getFile(String identifier) {
         return fileIdentifier.toFile(directory, identifier);
     }
-    
+
     /**
      * Reads a file from this store.
-     * 
+     *
      * @param identifier the identifier of the binary data being retrieved
      * @return the file associated with the given identifier
      * @throws IOException if file does not exist
@@ -267,18 +267,18 @@ public final class FileSystemStore extends AbstractByteStore implements ByteStor
             throw new FileNotFoundException(file.getAbsolutePath());
         }
     }
-    
+
     private void deleteEmptyParent(File file) throws IOException {
         Preconditions.checkArgument(file.isDirectory(), "%s has to be a directory", file);
-        
+
         // do not delete configured directory
         if (directory.equals(file)) return;
-        
+
         if (file.list().length > 0) {
             LOG.trace("Keeping non empty directory {}", file);
             return;
         }
-        
+
         LOG.trace("Deleting empty directory {}", file);
         FileUtils.deleteDirectory(file);
         deleteEmptyParent(file.getParentFile());
