@@ -29,10 +29,14 @@ public final class DefaultFileIdentifier implements FileIdentifier {
     public File toFile(File directory, String identifier) {
         final StringBuilder builder = new StringBuilder(identifier);
         
-        for (int i = 3; i < builder.length(); i += 4) {
-            builder.insert(i, File.separator);
+        if (builder.length() > 2) {
+            builder.insert(2, File.separator);
         }
-
+        
+        if (builder.length() > 5) {
+            builder.insert(5, File.separator);
+        }
+        
         return new File(directory, builder.toString());
     }
     
