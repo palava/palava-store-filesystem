@@ -61,7 +61,7 @@ import com.google.inject.name.Named;
  *
  * @author Willi Schoenborn
  */
-public final class FileSystemStore extends AbstractByteStore implements ByteStore {
+public final class FileSystemStore extends AbstractByteStore {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemStore.class);
 
